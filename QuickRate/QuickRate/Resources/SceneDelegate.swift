@@ -16,8 +16,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         guard let windowScene = (scene as? UIWindowScene) else { return }
         
         let window = UIWindow(windowScene: windowScene)
-        
-        let rootViewController = CurrencyConverterViewController()
+        let networkService = CurrencyExchangeNetworkService()
+        let viewModel = CurrencyConverterViewModel(currencyExchangeService: networkService)
+        let rootViewController = CurrencyConverterViewController(viewModel: viewModel)
         window.rootViewController = rootViewController
         self.window = window
         window.makeKeyAndVisible()
