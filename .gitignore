@@ -1,8 +1,16 @@
-# macOS системные файлы
+# macOS
 .DS_Store
 
-# Xcode временные и пользовательские файлы
+# Xcode
 build/
 DerivedData/
+xcuserdata/
+*.xccheckout
+*.xcscmblueprint
 *.xcuserstate
-*.xcuserdata/
+*.xcworkspace
+*.xcconfig
+
+# Swift Package Manager
+.swiftpm/
+.build/
