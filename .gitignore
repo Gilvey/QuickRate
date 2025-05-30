@@ -1,0 +1,8 @@
+# macOS системные файлы
+.DS_Store
+
+# Xcode временные и пользовательские файлы
+build/
+DerivedData/
+*.xcuserstate
+*.xcuserdata/
