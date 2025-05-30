@@ -6,12 +6,15 @@
 //
 
 import UIKit
+import Combine
 
 extension UITextField {
-    func applyCurrencyStyle() {
-        self.keyboardType = .decimalPad
-        self.layer.cornerRadius = 14
-        self.layer.borderWidth = 1
-        self.layer.borderColor = UIColor.lightGray.withAlphaComponent(0.33).cgColor
+    var textPublisher: AnyPublisher<String, Never> {
+        NotificationCenter.default
+            .publisher(for: UITextField.textDidChangeNotification, object: self)
+            .compactMap {
+                ($0.object as? UITextField)?.text
+            }
+            .eraseToAnyPublisher()
     }
 }
