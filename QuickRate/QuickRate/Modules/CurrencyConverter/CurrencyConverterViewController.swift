@@ -127,9 +127,7 @@ final class CurrencyConverterViewController: UIViewController {
             $0.size.equalTo(40)
         }
         
-        leftLine.snp.makeConstraints { $0.height.equalTo(1) }
         rightLine.snp.makeConstraints {
-            $0.height.equalTo(1)
             $0.width.equalTo(leftLine)
         }
     }

@@ -2,7 +2,7 @@
 //  Button.swift
 //  QuickRate
 //
-//  Created by Николай Гильвей on 30.05.25.
+//  Created by Gilvey Nikolay on 30.05.25.
 //
 
 import UIKit
@@ -12,7 +12,7 @@ enum ButtonStyle {
     case switchButton
 }
 
-class Button: UIButton {
+final class Button: UIButton {
     
     private var type: ButtonStyle
     
@@ -36,16 +36,16 @@ class Button: UIButton {
     private func configure() {
         layer.cornerRadius = 8
         titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
-        tintColor = .black
+        tintColor = ColorManager.neutralBlack
         
         switch type {
         case .currencyButton:
-            backgroundColor = .systemGray6
-            setTitleColor(.black, for: .normal)
+            backgroundColor = ColorManager.grayTertiary
+            setTitleColor(ColorManager.neutralBlack, for: .normal)
         case .switchButton:
-            backgroundColor = .clear
+            backgroundColor = ColorManager.neutralWhite
             layer.borderWidth = 1
-            layer.borderColor = UIColor.lightGray.withAlphaComponent(0.33).cgColor
+            layer.borderColor = ColorManager.grayTertiary.cgColor
         }
     }
 }
