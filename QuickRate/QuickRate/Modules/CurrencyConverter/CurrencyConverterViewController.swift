@@ -7,60 +7,51 @@
 
 import UIKit
 import SnapKit
+import Combine
+
+enum ButtonTag: Int {
+    case from = 0
+    case to
+}
 
 final class CurrencyConverterViewController: UIViewController {
     
-    private let amountTextField: UITextField = {
-        let textField = UITextField()
-        textField.applyCurrencyStyle()
-        return textField
-    }()
+    private lazy var amountTextField = TextField(placeHolder: "Enter amount")
     
-    private let resultTextField: UITextField = {
-        let textField = UITextField()
-        textField.applyCurrencyStyle()
-        return textField
-    }()
+    private lazy var resultTextField = TextField(placeHolder: "Converted amount")
     
-    private let fromCurrencyButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("BYN", for: .normal)
-        button.applyCurrencyButtonStyle()
+    private lazy var fromCurrencyButton = Button(type: .currencyButton)
+    
+    private lazy var toCurrencyButton = Button(type: .currencyButton)
+    
+    private lazy var switchButton: Button = {
+        let button = Button(type: .switchButton, image: ImageManager.arrowUpArrowDown)
+        button.addTarget(self, action: #selector(switchCurrencies), for: .touchUpInside)
         return button
     }()
     
-    private let toCurrencyButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("USD", for: .normal)
-        button.applyCurrencyButtonStyle()
-        return button
-    }()
+    private lazy var leftLine = LineView(color: .lightGray)
     
-    private let switchButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "arrow.up.arrow.down"), for: .normal)
-        button.applySwitchButtonStyle()
-        return button
-    }()
+    private lazy var rightLine = LineView(color: .lightGray)
     
-    private let leftLine: UIView = {
-        let view = UIView()
-        view.backgroundColor = .lightGray
-        return view
-    }()
+    private lazy var mainStack = UIStackView()
     
-    private let rightLine: UIView = {
-        let view = UIView()
-        view.backgroundColor = .lightGray
-        return view
-    }()
+    private let viewModel: CurrencyConverterViewModelProtocol
+    private var cancellables = Set<AnyCancellable>()
     
-    private let currencyOptions = ["USD", "BYN", "EUR", "RUB"]
-    private let mainStack = UIStackView()
+    init(viewModel: CurrencyConverterViewModelProtocol) {
+        self.viewModel = viewModel
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .white
+        setupBindings()
         setupCurrencyMenus()
         addSubviews()
         setupConstraints()
@@ -78,11 +69,26 @@ final class CurrencyConverterViewController: UIViewController {
     }
     
     private func configureMenu(for button: UIButton) {
-        button.menu = UIMenu(children: currencyOptions.map {
-            UIAction(title: $0) { action in
-                button.setTitle(action.title, for: .normal)
-            }
-        })
+        fromCurrencyButton.setTitle("BYN", for: .normal)
+        fromCurrencyButton.tag = ButtonTag.from.rawValue
+        toCurrencyButton.setTitle("USD", for: .normal)
+        toCurrencyButton.tag = ButtonTag.to.rawValue
+        button.menu = UIMenu(
+            children: viewModel.currencyOptions.map {
+                UIAction(title: $0) { [weak self] action in
+                    guard let self else { return }
+                    button.setTitle(action.title, for: .normal)
+                    if let tag = ButtonTag(rawValue: button.tag) {
+                        viewModel.send(
+                            .selectCurrency(
+                                type: tag,
+                                value: action.title,
+                                currentAmount: amountTextField.text ?? ""
+                            )
+                        )
+                    }
+                }
+            })
         button.showsMenuAsPrimaryAction = true
     }
     
@@ -153,4 +159,44 @@ final class CurrencyConverterViewController: UIViewController {
         }
     }
 }
+    
+// MARK: - Bindings
 
+private extension CurrencyConverterViewController {
+    func setupBindings() {
+        amountTextField.textPublisher
+            .debounce(for: .seconds(0.5), scheduler: RunLoop.main)
+            .removeDuplicates()
+            .sink { [weak self] text in
+                self?.viewModel.send(.amountChanged(text))
+            }
+            .store(in: &cancellables)
+        
+        viewModel.state
+            .receive(on: RunLoop.main)
+            .sink { [weak self] state in
+                self?.resultTextField.text = state.convertedValue
+                if let message = state.errorMessage {
+                    self?.showAlert(message: message)
+                }
+            }
+            .store(in: &cancellables)
+    }
+}
+
+// MARK: - Actions
+
+private extension CurrencyConverterViewController {
+    func showAlert(message: String) {
+        let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: "Ok", style: .default))
+        present(alert, animated: true)
+    }
+    
+    @objc
+    func switchCurrencies() {
+        viewModel.send(.switchCurrencies(currentAmount: amountTextField.text ?? ""))
+        fromCurrencyButton.setTitle(viewModel.fromCurrency, for: .normal)
+        toCurrencyButton.setTitle(viewModel.toCurrency, for: .normal)
+    }
+}
