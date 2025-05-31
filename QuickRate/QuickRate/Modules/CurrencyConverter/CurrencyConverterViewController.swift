@@ -181,6 +181,8 @@ private extension CurrencyConverterViewController {
                     self.showAlert(message: message)
                 }
                 
+                self.setLoading(isLoading: state.isLoading)
+                
                 if let currencies = state.currencies, self.isCurrencyMenuSetup == false {
                     self.fromCurrencyButton.setTitle(currencies.first, for: .normal)
                     self.toCurrencyButton.setTitle(currencies.dropFirst().first, for: .normal)
@@ -195,10 +197,18 @@ private extension CurrencyConverterViewController {
 // MARK: - Actions
 
 private extension CurrencyConverterViewController {
-    func showAlert(message: String) {
-        let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "Ok", style: .default))
-        present(alert, animated: true)
+    
+    func setLoading(isLoading: Bool) {
+        view.isUserInteractionEnabled = !isLoading
+        let image = isLoading ? ImageManager.loader : ImageManager.arrowUpArrowDown
+        
+        switchButton.setImage(image, for: .normal)
+        
+        if isLoading {
+            startRotating(for: switchButton.imageView ?? switchButton)
+        } else {
+            stopRotation(for: switchButton.imageView ?? switchButton)
+        }
     }
     
     @objc
@@ -207,4 +217,6 @@ private extension CurrencyConverterViewController {
         fromCurrencyButton.setTitle(viewModel.fromCurrency, for: .normal)
         toCurrencyButton.setTitle(viewModel.toCurrency, for: .normal)
     }
+    
+    
 }

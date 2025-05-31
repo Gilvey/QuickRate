@@ -52,12 +52,13 @@ final class CurrencyConverterViewModel: CurrencyConverterViewModelProtocol {
     }
     
     private func fetchCurrencies() {
+        state.send(.init(isLoading: true))
         Task {
             do {
                 currencyOptions = try await currencyExchangeService.fetchCurrencies()
                 fromCurrency = currencyOptions.first ?? "BYN"
                 toCurrency = currencyOptions.dropFirst().first ?? "USD"
-                state.send(CurrencyConverterState(currencies: currencyOptions))
+                state.send(CurrencyConverterState(currencies: currencyOptions, isLoading: false))
             } catch let error as QuickRateError {
                 updateErrorMessage(message: error.errorDescription)
             }
@@ -65,7 +66,12 @@ final class CurrencyConverterViewModel: CurrencyConverterViewModelProtocol {
     }
     
     private func getExchangeRate(for amount: String) {
-        guard !amount.isEmpty else { return }
+        guard !amount.isEmpty else {
+            updateConvertedValue(value: "")
+            return
+        }
+        state.send(.init(convertedValue: "...", isLoading: true))
+        
         let model = ExchangeRequestModel(
             amount: amount,
             fromCurrency: fromCurrency,
@@ -82,12 +88,12 @@ final class CurrencyConverterViewModel: CurrencyConverterViewModelProtocol {
     }
     
     private func updateErrorMessage(message: String) {
-        let newState = CurrencyConverterState(errorMessage: message)
+        let newState = CurrencyConverterState(errorMessage: message, isLoading: false)
         state.send(newState)
     }
     
     private func updateConvertedValue(value: String) {
-        let newState = CurrencyConverterState(convertedValue: value)
+        let newState = CurrencyConverterState(convertedValue: value, isLoading: false)
         state.send(newState)
     }
 }
