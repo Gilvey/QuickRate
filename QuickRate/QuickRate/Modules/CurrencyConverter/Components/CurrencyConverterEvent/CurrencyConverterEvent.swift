@@ -11,4 +11,5 @@ enum CurrencyConverterEvent {
     case amountChanged(String)
     case switchCurrencies(currentAmount: String)
     case selectCurrency(type: ButtonTag, value: String, currentAmount: String)
+    case fetchCurrencies
 }
