@@ -21,9 +21,9 @@ final class CurrencyConverterViewModel: CurrencyConverterViewModelProtocol {
     
     let state = PassthroughSubject<CurrencyConverterState, Never>()
     
-    var currencyOptions = ["USD", "BYN", "EUR", "RUB"]
-    private(set) var fromCurrency: String = "BYN"
-    private(set) var toCurrency: String = "USD"
+    var currencyOptions: [String] = []
+    private(set) var fromCurrency: String = ""
+    private(set) var toCurrency: String = ""
     
     private let currencyExchangeService: CurrencyExchangeNetworkProtocol
     
@@ -46,10 +46,23 @@ final class CurrencyConverterViewModel: CurrencyConverterViewModelProtocol {
                 toCurrency = value
             }
             getExchangeRate(for: currentAmount)
+        case .fetchCurrencies:
+            fetchCurrencies()
         }
     }
     
-    
+    private func fetchCurrencies() {
+        Task {
+            do {
+                currencyOptions = try await currencyExchangeService.fetchCurrencies()
+                fromCurrency = currencyOptions.first ?? "BYN"
+                toCurrency = currencyOptions.dropFirst().first ?? "USD"
+                state.send(CurrencyConverterState(currencies: currencyOptions))
+            } catch let error as QuickRateError {
+                updateErrorMessage(message: error.errorDescription)
+            }
+        }
+    }
     
     private func getExchangeRate(for amount: String) {
         guard !amount.isEmpty else { return }

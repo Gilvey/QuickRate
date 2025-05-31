@@ -38,6 +38,7 @@ final class CurrencyConverterViewController: UIViewController {
     
     private let viewModel: CurrencyConverterViewModelProtocol
     private var cancellables = Set<AnyCancellable>()
+    private var isCurrencyMenuSetup = false
     
     init(viewModel: CurrencyConverterViewModelProtocol) {
         self.viewModel = viewModel
@@ -52,7 +53,7 @@ final class CurrencyConverterViewController: UIViewController {
         super.viewDidLoad()
         view.backgroundColor = .white
         setupBindings()
-        setupCurrencyMenus()
+        viewModel.send(.fetchCurrencies)
         addSubviews()
         setupConstraints()
     }
@@ -64,15 +65,13 @@ final class CurrencyConverterViewController: UIViewController {
     }
     
     private func setupCurrencyMenus() {
+        fromCurrencyButton.tag = ButtonTag.from.rawValue
+        toCurrencyButton.tag = ButtonTag.to.rawValue
         configureMenu(for: fromCurrencyButton)
         configureMenu(for: toCurrencyButton)
     }
     
     private func configureMenu(for button: UIButton) {
-        fromCurrencyButton.setTitle("BYN", for: .normal)
-        fromCurrencyButton.tag = ButtonTag.from.rawValue
-        toCurrencyButton.setTitle("USD", for: .normal)
-        toCurrencyButton.tag = ButtonTag.to.rawValue
         button.menu = UIMenu(
             children: viewModel.currencyOptions.map {
                 UIAction(title: $0) { [weak self] action in
@@ -175,9 +174,18 @@ private extension CurrencyConverterViewController {
         viewModel.state
             .receive(on: RunLoop.main)
             .sink { [weak self] state in
-                self?.resultTextField.text = state.convertedValue
+                guard let self = self else { return }
+                self.resultTextField.text = state.convertedValue
+                
                 if let message = state.errorMessage {
-                    self?.showAlert(message: message)
+                    self.showAlert(message: message)
+                }
+                
+                if let currencies = state.currencies, self.isCurrencyMenuSetup == false {
+                    self.fromCurrencyButton.setTitle(currencies.first, for: .normal)
+                    self.toCurrencyButton.setTitle(currencies.dropFirst().first, for: .normal)
+                    self.setupCurrencyMenus()
+                    self.isCurrencyMenuSetup = true
                 }
             }
             .store(in: &cancellables)
