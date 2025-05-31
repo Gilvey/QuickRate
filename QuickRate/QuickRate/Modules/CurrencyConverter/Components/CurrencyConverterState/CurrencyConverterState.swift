@@ -10,4 +10,5 @@ import Foundation
 struct CurrencyConverterState {
     var convertedValue: String = ""
     var errorMessage: String?
+    var currencies: [String]?
 }
