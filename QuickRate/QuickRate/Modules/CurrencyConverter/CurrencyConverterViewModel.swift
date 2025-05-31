@@ -6,15 +6,24 @@
 //
 
 import Foundation
+import Combine
 
-final class CurrencyConverterViewModel {
+protocol CurrencyConverterViewModelProtocol: AnyObject {
+    var state: PassthroughSubject<CurrencyConverterState, Never> { get }
+    var currencyOptions: [String] { get }
+    var fromCurrency: String { get }
+    var toCurrency: String { get }
     
-    @Published var convertedValue: String = ""
-    @Published var errorMessage: String?
+    func send(_ event: CurrencyConverterEvent)
+}
+
+final class CurrencyConverterViewModel: CurrencyConverterViewModelProtocol {
+    
+    let state = PassthroughSubject<CurrencyConverterState, Never>()
     
     var currencyOptions = ["USD", "BYN", "EUR", "RUB"]
-    var fromCurrency: String = "BYN"
-    var toCurrency: String = "USD"
+    private(set) var fromCurrency: String = "BYN"
+    private(set) var toCurrency: String = "USD"
     
     private let currencyExchangeService: CurrencyExchangeNetworkProtocol
     
@@ -22,14 +31,50 @@ final class CurrencyConverterViewModel {
         self.currencyExchangeService = currencyExchangeService
     }
     
-    func getExchangeRate(for amount: String) {
-        guard !amount.isEmpty else { return  }
+    func send(_ event: CurrencyConverterEvent) {
+        switch event {
+        case .amountChanged(let string):
+            getExchangeRate(for: string)
+        case .switchCurrencies(let currentAmount):
+            swap(&fromCurrency, &toCurrency)
+            getExchangeRate(for: currentAmount)
+        case .selectCurrency(let type, let value, let currentAmount):
+            switch type {
+            case .from:
+                fromCurrency = value
+            case .to:
+                toCurrency = value
+            }
+            getExchangeRate(for: currentAmount)
+        }
+    }
+    
+    
+    
+    private func getExchangeRate(for amount: String) {
+        guard !amount.isEmpty else { return }
+        let model = ExchangeRequestModel(
+            amount: amount,
+            fromCurrency: fromCurrency,
+            toCurrency: toCurrency
+        )
         Task {
             do {
-                convertedValue = try await currencyExchangeService.fetchExchangeRate(for: amount, from: fromCurrency, to: toCurrency)
-            } catch {
-                errorMessage = error.localizedDescription
+                let response = try await currencyExchangeService.fetchExchangeRate(model)
+                updateConvertedValue(value: response.amount)
+            } catch let error as QuickRateError {
+                updateErrorMessage(message: error.errorDescription)
             }
         }
+    }
+    
+    private func updateErrorMessage(message: String) {
+        let newState = CurrencyConverterState(errorMessage: message)
+        state.send(newState)
+    }
+    
+    private func updateConvertedValue(value: String) {
+        let newState = CurrencyConverterState(convertedValue: value)
+        state.send(newState)
     }
 }

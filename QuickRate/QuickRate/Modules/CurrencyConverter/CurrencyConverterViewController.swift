@@ -9,69 +9,37 @@ import UIKit
 import SnapKit
 import Combine
 
-enum ButtonType: Int {
+enum ButtonTag: Int {
     case from = 0
     case to
 }
 
 final class CurrencyConverterViewController: UIViewController {
     
-    private let viewModel: CurrencyConverterViewModel
+    private lazy var amountTextField = TextField(placeHolder: "Enter amount")
     
-    private let amountTextField: UITextField = {
-        let textField = UITextField()
-        textField.applyCurrencyStyle()
-        return textField
-    }()
+    private lazy var resultTextField = TextField(placeHolder: "Converted amount")
     
-    private let resultTextField: UITextField = {
-        let textField = UITextField()
-        textField.applyCurrencyStyle()
-        return textField
-    }()
+    private lazy var fromCurrencyButton = Button(type: .currencyButton)
     
-    private let fromCurrencyButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("BYN", for: .normal)
-        button.applyCurrencyButtonStyle()
-        button.tag = ButtonType.from.rawValue
-        return button
-    }()
+    private lazy var toCurrencyButton = Button(type: .currencyButton)
     
-    private let toCurrencyButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("USD", for: .normal)
-        button.applyCurrencyButtonStyle()
-        button.tag = ButtonType.to.rawValue
-        return button
-    }()
-    
-    private lazy var switchButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "arrow.up.arrow.down"), for: .normal)
-        button.applySwitchButtonStyle()
+    private lazy var switchButton: Button = {
+        let button = Button(type: .switchButton, image: ImageManager.arrowUpArrowDown)
         button.addTarget(self, action: #selector(switchCurrencies), for: .touchUpInside)
         return button
     }()
     
-    private let leftLine: UIView = {
-        let view = UIView()
-        view.backgroundColor = .lightGray
-        return view
-    }()
+    private lazy var leftLine = LineView(color: .lightGray)
     
-    private let rightLine: UIView = {
-        let view = UIView()
-        view.backgroundColor = .lightGray
-        return view
-    }()
+    private lazy var rightLine = LineView(color: .lightGray)
     
-    private let currencyOptions = ["USD", "BYN", "EUR", "RUB"]
-    private let mainStack = UIStackView()
+    private lazy var mainStack = UIStackView()
     
+    private let viewModel: CurrencyConverterViewModelProtocol
     private var cancellables = Set<AnyCancellable>()
     
-    init(viewModel: CurrencyConverterViewModel) {
+    init(viewModel: CurrencyConverterViewModelProtocol) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
     }
@@ -101,21 +69,26 @@ final class CurrencyConverterViewController: UIViewController {
     }
     
     private func configureMenu(for button: UIButton) {
-        button.menu = UIMenu(children: currencyOptions.map {
-            UIAction(title: $0) { [weak self] action in
-                guard let self else { return }
-                button.setTitle(action.title, for: .normal)
-                switch ButtonType(rawValue: button.tag) {
-                case .from:
-                    self.viewModel.fromCurrency = action.title
-                case .to:
-                    self.viewModel.toCurrency = action.title
-                case .none:
-                    break
+        fromCurrencyButton.setTitle("BYN", for: .normal)
+        fromCurrencyButton.tag = ButtonTag.from.rawValue
+        toCurrencyButton.setTitle("USD", for: .normal)
+        toCurrencyButton.tag = ButtonTag.to.rawValue
+        button.menu = UIMenu(
+            children: viewModel.currencyOptions.map {
+                UIAction(title: $0) { [weak self] action in
+                    guard let self else { return }
+                    button.setTitle(action.title, for: .normal)
+                    if let tag = ButtonTag(rawValue: button.tag) {
+                        viewModel.send(
+                            .selectCurrency(
+                                type: tag,
+                                value: action.title,
+                                currentAmount: amountTextField.text ?? ""
+                            )
+                        )
+                    }
                 }
-                self.viewModel.getExchangeRate(for: self.amountTextField.text ?? "")
-            }
-        })
+            })
         button.showsMenuAsPrimaryAction = true
     }
     
@@ -187,7 +160,7 @@ final class CurrencyConverterViewController: UIViewController {
     }
 }
     
-// MARK: - Setup Bindigs
+// MARK: - Bindings
 
 private extension CurrencyConverterViewController {
     func setupBindings() {
@@ -195,28 +168,23 @@ private extension CurrencyConverterViewController {
             .debounce(for: .seconds(0.5), scheduler: RunLoop.main)
             .removeDuplicates()
             .sink { [weak self] text in
-                self?.viewModel.getExchangeRate(for: text)
+                self?.viewModel.send(.amountChanged(text))
             }
             .store(in: &cancellables)
         
-        viewModel.$convertedValue
+        viewModel.state
             .receive(on: RunLoop.main)
-            .sink { [weak self] result in
-                self?.resultTextField.text = result
-            }
-            .store(in: &cancellables)
-        
-        viewModel.$errorMessage
-            .receive(on: RunLoop.main)
-            .compactMap { $0 }
-            .sink { [weak self] message in
-                self?.showAlert(message: message)
+            .sink { [weak self] state in
+                self?.resultTextField.text = state.convertedValue
+                if let message = state.errorMessage {
+                    self?.showAlert(message: message)
+                }
             }
             .store(in: &cancellables)
     }
 }
 
-// MARK: - funcs
+// MARK: - Actions
 
 private extension CurrencyConverterViewController {
     func showAlert(message: String) {
@@ -227,11 +195,8 @@ private extension CurrencyConverterViewController {
     
     @objc
     func switchCurrencies() {
-        let old = viewModel.fromCurrency
-        viewModel.fromCurrency = viewModel.toCurrency
-        viewModel.toCurrency = old
+        viewModel.send(.switchCurrencies(currentAmount: amountTextField.text ?? ""))
         fromCurrencyButton.setTitle(viewModel.fromCurrency, for: .normal)
         toCurrencyButton.setTitle(viewModel.toCurrency, for: .normal)
-        viewModel.getExchangeRate(for: amountTextField.text ?? "")
     }
 }
