@@ -52,6 +52,7 @@ final class CurrencyConverterViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .white
+        navigationItem.title = "Currency Converter"
         setupBindings()
         viewModel.send(.fetchCurrencies)
         addSubviews()
