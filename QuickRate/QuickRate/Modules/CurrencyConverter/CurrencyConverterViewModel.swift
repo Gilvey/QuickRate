@@ -24,16 +24,24 @@ final class CurrencyConverterViewModel: CurrencyConverterViewModelProtocol {
     var currencyOptions: [String] = []
     private(set) var fromCurrency: String = ""
     private(set) var toCurrency: String = ""
+    private var currentAmount: String = ""
+    private var timer: Timer?
     
     private let currencyExchangeService: CurrencyExchangeNetworkProtocol
     
     init(currencyExchangeService: CurrencyExchangeNetworkProtocol) {
         self.currencyExchangeService = currencyExchangeService
+        startTimer()
+    }
+    
+    deinit {
+        timer?.invalidate()
     }
     
     func send(_ event: CurrencyConverterEvent) {
         switch event {
         case .amountChanged(let string):
+            currentAmount = string
             getExchangeRate(for: string)
         case .switchCurrencies(let currentAmount):
             swap(&fromCurrency, &toCurrency)
@@ -95,5 +103,12 @@ final class CurrencyConverterViewModel: CurrencyConverterViewModelProtocol {
     private func updateConvertedValue(value: String) {
         let newState = CurrencyConverterState(convertedValue: value, isLoading: false)
         state.send(newState)
+    }
+    
+    private func startTimer() {
+        timer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { [weak self] _ in
+            guard let self = self, !self.currentAmount.isEmpty else { return }
+            self.getExchangeRate(for: currentAmount)
+        }
     }
 }
