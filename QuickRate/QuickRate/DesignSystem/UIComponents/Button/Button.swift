@@ -7,25 +7,21 @@
 
 import UIKit
 
-enum ButtonStyle {
-    case currencyButton
-    case switchButton
-}
-
 final class Button: UIButton {
     
-    private var type: ButtonStyle
-    
-    init(type: ButtonStyle) {
-        self.type = type
-        super.init(frame: .zero)
-        configure()
+    enum Style {
+        case currencyButton
+        case switchButton
     }
     
-    init(type: ButtonStyle, image: UIImage) {
-        self.type = type
+    private let style: Style
+    
+    init(style: Style, image: UIImage? = nil) {
+        self.style = style
         super.init(frame: .zero)
-        self.setImage(image, for: .normal)
+        if let image = image {
+            self.setImage(image, for: .normal)
+        }
         configure()
     }
     
@@ -36,16 +32,17 @@ final class Button: UIButton {
     private func configure() {
         layer.cornerRadius = 8
         titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
-        tintColor = ColorManager.neutralBlack
+        tintColor = .AppColors.neutralBlack
         
-        switch type {
+        switch style {
         case .currencyButton:
-            backgroundColor = ColorManager.grayTertiary
-            setTitleColor(ColorManager.neutralBlack, for: .normal)
+            backgroundColor = .AppColors.blue
+            setTitleColor(.AppColors.neutralWhite, for: .normal)
         case .switchButton:
-            backgroundColor = ColorManager.neutralWhite
+            backgroundColor = .AppColors.neutralWhite
+            tintColor = .AppColors.blue
             layer.borderWidth = 1
-            layer.borderColor = ColorManager.grayTertiary.cgColor
+            layer.borderColor = UIColor.AppColors.grayTertiary.cgColor
         }
     }
 }

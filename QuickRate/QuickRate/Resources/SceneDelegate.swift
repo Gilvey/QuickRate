@@ -18,7 +18,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         let window = UIWindow(windowScene: windowScene)
         let networkService = CurrencyExchangeNetworkService()
         let viewModel = CurrencyConverterViewModel(currencyExchangeService: networkService)
-        let rootViewController = CurrencyConverterViewController(viewModel: viewModel)
+        let rootViewController = UINavigationController(
+            rootViewController: CurrencyConverterViewController(
+                viewModel: viewModel
+            )
+        )
         window.rootViewController = rootViewController
         self.window = window
         window.makeKeyAndVisible()

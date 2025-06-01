@@ -18,14 +18,14 @@ final class CurrencyConverterViewController: UIViewController {
     
     private lazy var amountTextField = TextField(placeHolder: "Enter amount")
     
-    private lazy var resultTextField = TextField(placeHolder: "Converted amount")
+    private lazy var resultTextField = TextField(placeHolder: "Converted amount", isEnable: false)
     
-    private lazy var fromCurrencyButton = Button(type: .currencyButton)
+    private lazy var fromCurrencyButton = Button(style: .currencyButton)
     
-    private lazy var toCurrencyButton = Button(type: .currencyButton)
+    private lazy var toCurrencyButton = Button(style: .currencyButton)
     
     private lazy var switchButton: Button = {
-        let button = Button(type: .switchButton, image: ImageManager.arrowUpArrowDown)
+        let button = Button(style: .switchButton, image: UIImage(.arrowUpArrowDown))
         button.addTarget(self, action: #selector(switchCurrencies), for: .touchUpInside)
         return button
     }()
@@ -40,9 +40,16 @@ final class CurrencyConverterViewController: UIViewController {
     private var cancellables = Set<AnyCancellable>()
     private var isCurrencyMenuSetup = false
     
+    private var mainStackCenterYConstraint: Constraint?
+    private var isKeyBoardPresented = false
+    
     init(viewModel: CurrencyConverterViewModelProtocol) {
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
+    }
+    
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
     
     required init?(coder: NSCoder) {
@@ -52,17 +59,84 @@ final class CurrencyConverterViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .white
+        navigationItem.title = "Currency Converter"
         setupBindings()
         viewModel.send(.fetchCurrencies)
         addSubviews()
         setupConstraints()
+        setupDismissGesture()
+        observeKeyBoardChanges()
     }
     
-    override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
-        super.viewWillTransition(to: size, with: coordinator)
+    // MARK: - UI Setup
+    
+    private func addSubviews() {
+        let amountStack = UIStackView(
+            arrangedSubviews: [amountTextField, fromCurrencyButton],
+            axis: .horizontal,
+            spacing: 10
+        )
         
-        self.updateMainStackLayoutConstraints()
+        let resultStack = UIStackView(
+            arrangedSubviews: [resultTextField, toCurrencyButton],
+            axis: .horizontal,
+            spacing: 10
+        )
+        
+        let switchStack = UIStackView(
+            arrangedSubviews: [leftLine, switchButton, rightLine],
+            axis: .horizontal,
+            spacing: 12,
+            alignment: .center
+        )
+        
+        mainStack.axis = .vertical
+        mainStack.spacing = 18
+        mainStack.addArrangedSubview(amountStack)
+        mainStack.addArrangedSubview(switchStack)
+        mainStack.addArrangedSubview(resultStack)
+        
+        view.addSubview(mainStack)
     }
+    
+    private func setupConstraints() {
+        mainStack.snp.remakeConstraints {
+            if isIphone {
+                $0.top.equalTo(view.safeAreaLayoutGuide).offset(40)
+                $0.left.right.equalToSuperview().inset(20)
+            } else {
+                $0.centerX.equalToSuperview()
+                mainStackCenterYConstraint = $0.centerY.equalToSuperview().constraint
+                $0.width.equalTo(350)
+            }
+        }
+        
+        [amountTextField, resultTextField].forEach {
+            $0.snp.makeConstraints { $0.height.equalTo(44) }
+        }
+        
+        [fromCurrencyButton, toCurrencyButton].forEach {
+            $0.snp.makeConstraints {
+                $0.width.equalTo(80)
+                $0.height.equalTo(44)
+            }
+        }
+        
+        switchButton.snp.makeConstraints {
+            $0.size.equalTo(40)
+        }
+        
+        rightLine.snp.makeConstraints {
+            $0.width.equalTo(leftLine)
+        }
+    }
+    
+    private func setupDismissGesture() {
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissKeyboard))
+        view.addGestureRecognizer(tapGesture)
+    }
+    
+    // MARK: - Currency Menus
     
     private func setupCurrencyMenus() {
         fromCurrencyButton.tag = ButtonTag.from.rawValue
@@ -89,73 +163,6 @@ final class CurrencyConverterViewController: UIViewController {
                 }
             })
         button.showsMenuAsPrimaryAction = true
-    }
-    
-    private func addSubviews() {
-        let amountStack = UIStackView(arrangedSubviews: [amountTextField, fromCurrencyButton])
-        amountStack.axis = .horizontal
-        amountStack.spacing = 10
-        
-        let resultStack = UIStackView(arrangedSubviews: [resultTextField, toCurrencyButton])
-        resultStack.axis = .horizontal
-        resultStack.spacing = 10
-        
-        let switchStack = UIStackView(arrangedSubviews: [leftLine, switchButton, rightLine])
-        switchStack.axis = .horizontal
-        switchStack.spacing = 12
-        switchStack.alignment = .center
-        
-        mainStack.axis = .vertical
-        mainStack.spacing = 18
-        mainStack.addArrangedSubview(amountStack)
-        mainStack.addArrangedSubview(switchStack)
-        mainStack.addArrangedSubview(resultStack)
-        
-        view.addSubview(mainStack)
-    }
-    
-    private func setupConstraints() {
-        updateMainStackLayoutConstraints()
-        
-        [amountTextField, resultTextField].forEach {
-            $0.snp.makeConstraints { $0.height.equalTo(44) }
-        }
-        
-        [fromCurrencyButton, toCurrencyButton].forEach {
-            $0.snp.makeConstraints {
-                $0.width.equalTo(80)
-                $0.height.equalTo(44)
-            }
-        }
-        
-        switchButton.snp.makeConstraints {
-            $0.size.equalTo(40)
-        }
-        
-        rightLine.snp.makeConstraints {
-            $0.width.equalTo(leftLine)
-        }
-    }
-    
-    private func updateMainStackLayoutConstraints() {
-        mainStack.snp.remakeConstraints {
-            $0.top.equalTo(view.safeAreaLayoutGuide).offset(40)
-            
-            let isPortrait: Bool = {
-                if UIDevice.current.orientation.isValidInterfaceOrientation {
-                    return UIDevice.current.orientation.isPortrait
-                } else {
-                    return view.bounds.height >= view.bounds.width
-                }
-            }()
-            
-            if traitCollection.horizontalSizeClass == .compact && isPortrait {
-                $0.left.right.equalToSuperview().inset(20)
-            } else {
-                $0.centerX.equalToSuperview()
-                $0.width.equalTo(350)
-            }
-        }
     }
 }
     
@@ -194,13 +201,84 @@ private extension CurrencyConverterViewController {
     }
 }
 
-// MARK: - Actions
+// MARK: - User Interaction
 
 private extension CurrencyConverterViewController {
+    @objc
+    func switchCurrencies() {
+        viewModel.send(.switchCurrencies(currentAmount: amountTextField.text ?? ""))
+        fromCurrencyButton.setTitle(viewModel.fromCurrency, for: .normal)
+        toCurrencyButton.setTitle(viewModel.toCurrency, for: .normal)
+    }
     
+    @objc
+    func dismissKeyboard() {
+        view.endEditing(true)
+    }
+}
+
+// MARK: - Keyboard Handling
+
+private extension CurrencyConverterViewController {
+    func observeKeyBoardChanges() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillShow),
+            name: UIResponder.keyboardWillShowNotification,
+            object: nil
+        )
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillHide),
+            name: UIResponder.keyboardWillHideNotification,
+            object: nil
+        )
+    }
+    
+    @objc
+    func keyboardWillShow(_ notification: Notification) {
+        guard let userInfo = notification.userInfo,
+              let keyboardFrame = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
+        
+        let timeInterval = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? TimeInterval
+        
+        let stackFrameInWindow = mainStack.convert(mainStack.bounds, to: view.window)
+        let stackBottomY = stackFrameInWindow.maxY
+        let keyboardTopY = keyboardFrame.minY
+        
+        let overlap = stackBottomY - keyboardTopY
+        
+        guard overlap > 0 else { return }
+        
+        let padding: CGFloat = 16
+        let offset = overlap + padding
+        
+        mainStackCenterYConstraint?.update(offset: -offset)
+        
+        UIView.animate(withDuration: timeInterval ?? 0) {
+            self.view.layoutIfNeeded()
+        }
+    }
+    
+    @objc
+    func keyboardWillHide(_ notification: Notification) {
+        mainStackCenterYConstraint?.update(offset: 0)
+        
+        let timeInterval = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? TimeInterval
+        
+        UIView.animate(withDuration: timeInterval ?? 0) {
+            self.view.layoutIfNeeded()
+        }
+    }
+}
+
+// MARK: - Loading Indicator
+
+private extension CurrencyConverterViewController {
     func setLoading(isLoading: Bool) {
         view.isUserInteractionEnabled = !isLoading
-        let image = isLoading ? ImageManager.loader : ImageManager.arrowUpArrowDown
+        let image = isLoading ? UIImage(.loader) : UIImage(.arrowUpArrowDown)
         
         switchButton.setImage(image, for: .normal)
         
@@ -210,13 +288,4 @@ private extension CurrencyConverterViewController {
             stopRotation(for: switchButton.imageView ?? switchButton)
         }
     }
-    
-    @objc
-    func switchCurrencies() {
-        viewModel.send(.switchCurrencies(currentAmount: amountTextField.text ?? ""))
-        fromCurrencyButton.setTitle(viewModel.fromCurrency, for: .normal)
-        toCurrencyButton.setTitle(viewModel.toCurrency, for: .normal)
-    }
-    
-    
 }
