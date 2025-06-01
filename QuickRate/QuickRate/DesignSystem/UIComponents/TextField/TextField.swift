@@ -11,9 +11,10 @@ final class TextField: UITextField {
     
     private let padding = UIEdgeInsets(top: 0, left: 12, bottom: 0, right: 12)
     
-    init(placeHolder: String) {
+    init(placeHolder: String, isEnable: Bool = true) {
         super.init(frame: .zero)
         self.placeholder = placeHolder
+        self.isUserInteractionEnabled = isEnable
         configure()
     }
     
@@ -37,6 +38,6 @@ final class TextField: UITextField {
         self.keyboardType = .decimalPad
         self.layer.cornerRadius = 14
         self.layer.borderWidth = 1
-        self.layer.borderColor = ColorManager.grayTertiary.cgColor
+        self.layer.borderColor = UIColor.AppColors.grayTertiary.cgColor
     }
 }
