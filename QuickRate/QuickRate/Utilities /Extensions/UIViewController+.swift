@@ -8,6 +8,11 @@
 import UIKit
 
 extension UIViewController {
+    
+    var isIphone: Bool {
+        UIDevice.current.model == "iPhone"
+    }
+
     func showAlert(message: String) {
         let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "Ok", style: .default))
