@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct QuickRateError: Error, Decodable {
+struct ServerError: Error, Decodable {
     let error: String
     let errorDescription: String
     
@@ -17,6 +17,6 @@ struct QuickRateError: Error, Decodable {
     }
 }
 
-extension QuickRateError {
-    static let `default` = QuickRateError(error: "parse_error", errorDescription: "Oops, smth went wrong")
+extension ServerError {
+    static let `default` = ServerError(error: "parse_error", errorDescription: "Oops, smth went wrong")
 }

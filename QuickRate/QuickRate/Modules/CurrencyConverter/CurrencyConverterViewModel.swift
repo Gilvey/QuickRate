@@ -63,12 +63,12 @@ final class CurrencyConverterViewModel: CurrencyConverterViewModelProtocol {
         state.send(.init(isLoading: true))
         Task {
             do {
-                currencyOptions = try await currencyExchangeService.fetchCurrencies()
+                currencyOptions = try await currencyExchangeService.fetchCurrencies().sorted()
                 fromCurrency = currencyOptions.first ?? "BYN"
                 toCurrency = currencyOptions.dropFirst().first ?? "USD"
                 state.send(CurrencyConverterState(currencies: currencyOptions, isLoading: false))
-            } catch let error as QuickRateError {
-                updateErrorMessage(message: error.errorDescription)
+            } catch {
+                updateErrorMessage(message: error.localizedDescription)
             }
         }
     }
@@ -89,8 +89,8 @@ final class CurrencyConverterViewModel: CurrencyConverterViewModelProtocol {
             do {
                 let response = try await currencyExchangeService.fetchExchangeRate(model)
                 updateConvertedValue(value: response.amount)
-            } catch let error as QuickRateError {
-                updateErrorMessage(message: error.errorDescription)
+            } catch {
+                updateErrorMessage(message: error.localizedDescription)
             }
         }
     }

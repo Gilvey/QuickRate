@@ -35,7 +35,7 @@ extension EndPoint {
         nil
     }
 
-    func urlRequest() throws -> URLRequest {
+    func urlRequest() throws(NetworkError) -> URLRequest {
         if let url = url {
             var request = URLRequest(url: url)
             request.httpMethod = httpMethod.rawValue
@@ -43,7 +43,7 @@ extension EndPoint {
             request.allHTTPHeaderFields = headers
             return request
         } else {
-            throw QuickRateError(error: "invalid_url", errorDescription: "Wrong url")
+            throw NetworkError.invalidURL
         }
     }
 }
