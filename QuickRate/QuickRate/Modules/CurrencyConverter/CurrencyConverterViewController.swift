@@ -71,18 +71,24 @@ final class CurrencyConverterViewController: UIViewController {
     // MARK: - UI Setup
     
     private func addSubviews() {
-        let amountStack = UIStackView(arrangedSubviews: [amountTextField, fromCurrencyButton])
-        amountStack.axis = .horizontal
-        amountStack.spacing = 10
+        let amountStack = UIStackView(
+            arrangedSubviews: [amountTextField, fromCurrencyButton],
+            axis: .horizontal,
+            spacing: 10
+        )
         
-        let resultStack = UIStackView(arrangedSubviews: [resultTextField, toCurrencyButton])
-        resultStack.axis = .horizontal
-        resultStack.spacing = 10
+        let resultStack = UIStackView(
+            arrangedSubviews: [resultTextField, toCurrencyButton],
+            axis: .horizontal,
+            spacing: 10
+        )
         
-        let switchStack = UIStackView(arrangedSubviews: [leftLine, switchButton, rightLine])
-        switchStack.axis = .horizontal
-        switchStack.spacing = 12
-        switchStack.alignment = .center
+        let switchStack = UIStackView(
+            arrangedSubviews: [leftLine, switchButton, rightLine],
+            axis: .horizontal,
+            spacing: 12,
+            alignment: .center
+        )
         
         mainStack.axis = .vertical
         mainStack.spacing = 18
