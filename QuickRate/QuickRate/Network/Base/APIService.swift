@@ -9,8 +9,8 @@ import Foundation
 
 protocol APIServiceProtocol {
     
-    func performRequest<T: Decodable>(_ endPoint: EndPoint) async throws -> T
-    func performRequest(endPoint: EndPoint) async throws -> Void
+    func performRequest<T: Decodable>(_ endPoint: EndPoint) async throws(NetworkError) -> T
+    func performRequest(endPoint: EndPoint) async throws(NetworkError) -> Void
 }
 
 final class APIService: APIServiceProtocol {
@@ -23,36 +23,43 @@ final class APIService: APIServiceProtocol {
     
     private let decoder = JSONDecoder()
     
-    func performRequest<T: Decodable>(_ endPoint: EndPoint) async throws -> T {
+    func performRequest<T: Decodable>(_ endPoint: EndPoint) async throws(NetworkError) -> T {
         let data = try await fetchData(for: endPoint)
         return try decode(data: data, as: T.self)
     }
     
-    func performRequest(endPoint: EndPoint) async throws {
+    func performRequest(endPoint: EndPoint) async throws(NetworkError) {
         _ = try await fetchData(for: endPoint)
-        
     }
     
-    private func fetchData(for endPoint: EndPoint) async throws -> Data {
+    private func fetchData(for endPoint: EndPoint) async throws(NetworkError) -> Data {
         let request = try endPoint.urlRequest()
         let session = APIService.session
-        let (data, response) = try await session.data(for: request)
+        
+        var data = Data()
+        var response = URLResponse()
+        
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch {
+            throw NetworkError.requestFailed(underlying: error)
+        }
         
         guard let httpResponse = response as? HTTPURLResponse else {
-            throw QuickRateError.default
+            throw NetworkError.serverError(ServerError.default)
         }
         if (200..<300).contains(httpResponse.statusCode) {
             return data
         } else {
-            throw try decode(data: data, as: QuickRateError.self)
+            throw try NetworkError.serverError(decode(data: data, as: ServerError.self))
         }
     }
     
-    private func decode<T:Decodable>(data: Data, as type: T.Type) throws -> T {
+    private func decode<T:Decodable>(data: Data, as type: T.Type) throws(NetworkError) -> T {
         do {
             return try decoder.decode(type, from: data)
         } catch {
-            throw QuickRateError.default
+            throw NetworkError.decodingFailed
         }
     }
 }
