@@ -17,4 +17,8 @@ enum ColorManager {
     // MARK: - Gray
 
     static var grayTertiary: UIColor { UIColor(hex: 0xD1D1D1) }
+    
+    // MARK: - Blue
+    
+    static var blue: UIColor { UIColor(hex: 0x0586f7)}
 }

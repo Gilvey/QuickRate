@@ -40,10 +40,11 @@ final class Button: UIButton {
         
         switch type {
         case .currencyButton:
-            backgroundColor = ColorManager.grayTertiary
-            setTitleColor(ColorManager.neutralBlack, for: .normal)
+            backgroundColor = ColorManager.blue
+            setTitleColor(ColorManager.neutralWhite, for: .normal)
         case .switchButton:
             backgroundColor = ColorManager.neutralWhite
+            tintColor = ColorManager.blue
             layer.borderWidth = 1
             layer.borderColor = ColorManager.grayTertiary.cgColor
         }
