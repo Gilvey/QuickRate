@@ -10,8 +10,6 @@ import Combine
 
 protocol CurrencyConverterViewModelProtocol: AnyObject {
     var state: PassthroughSubject<CurrencyConverterState, Never> { get }
-    var fromCurrency: String { get }
-    var toCurrency: String { get }
     
     func send(_ event: CurrencyConverterEvent)
 }
@@ -45,6 +43,8 @@ final class CurrencyConverterViewModel: CurrencyConverterViewModelProtocol {
         case .switchCurrencies(let currentAmount):
             swap(&fromCurrency, &toCurrency)
             getExchangeRate(for: currentAmount)
+            let newState = CurrencyConverterState(switchedCurrencies: (fromCurrency, toCurrency))
+            state.send(newState)
         case .selectCurrency(let type, let value, let currentAmount):
             switch type {
             case .from:

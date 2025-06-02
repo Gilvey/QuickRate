@@ -12,4 +12,5 @@ struct CurrencyConverterState {
     var errorMessage: String?
     var currencies: [String]?
     var isLoading: Bool = false
+    var switchedCurrencies: (String, String)?
 }
