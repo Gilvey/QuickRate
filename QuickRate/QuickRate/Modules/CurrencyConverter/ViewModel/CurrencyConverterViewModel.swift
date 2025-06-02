@@ -10,7 +10,6 @@ import Combine
 
 protocol CurrencyConverterViewModelProtocol: AnyObject {
     var state: PassthroughSubject<CurrencyConverterState, Never> { get }
-    var currencyOptions: [String] { get }
     var fromCurrency: String { get }
     var toCurrency: String { get }
     
@@ -64,8 +63,9 @@ final class CurrencyConverterViewModel: CurrencyConverterViewModelProtocol {
         Task {
             do {
                 currencyOptions = try await currencyExchangeService.fetchCurrencies().sorted()
-                fromCurrency = currencyOptions.first ?? "BYN"
-                toCurrency = currencyOptions.dropFirst().first ?? "USD"
+                currencyOptions.append("TEST")
+                fromCurrency = currencyOptions.first ?? ""
+                toCurrency = currencyOptions.dropFirst().first ?? ""
                 state.send(CurrencyConverterState(currencies: currencyOptions, isLoading: false))
             } catch {
                 updateErrorMessage(message: error.localizedDescription)
