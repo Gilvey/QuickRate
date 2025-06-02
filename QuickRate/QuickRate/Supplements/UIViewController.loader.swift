@@ -8,17 +8,6 @@
 import UIKit
 
 extension UIViewController {
-    
-    var isIphone: Bool {
-        UIDevice.current.model == "iPhone"
-    }
-
-    func showAlert(message: String) {
-        let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "Ok", style: .default))
-        present(alert, animated: true)
-    }
-    
     func startRotating(for view: UIView) {
         let animation = CABasicAnimation(keyPath: "transform.rotation")
         animation.duration = 1
