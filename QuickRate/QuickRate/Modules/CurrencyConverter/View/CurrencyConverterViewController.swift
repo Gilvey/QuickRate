@@ -277,15 +277,15 @@ private extension CurrencyConverterViewController {
 
 private extension CurrencyConverterViewController {
     func setLoading(isLoading: Bool) {
-        view.isUserInteractionEnabled = !isLoading
+        switchButton.isUserInteractionEnabled = !isLoading
         let image = isLoading ? UIImage(.loader) : UIImage(.arrowUpArrowDown)
         
         switchButton.setImage(image, for: .normal)
         
         if isLoading {
-            switchButton.imageView?.startAnimating()
+            switchButton.imageView?.startRotating()
         } else {
-            switchButton.imageView?.stopAnimating()
+            switchButton.imageView?.stopRotation()
         }
     }
 }
