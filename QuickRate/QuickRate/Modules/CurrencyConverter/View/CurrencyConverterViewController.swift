@@ -196,6 +196,11 @@ private extension CurrencyConverterViewController {
                     self.setupCurrencyMenus(with: currencies)
                     self.isCurrencyMenuSetup = true
                 }
+                
+                if let (fromCurrency, toCurrency) = state.switchedCurrencies {
+                    fromCurrencyButton.setTitle(fromCurrency, for: .normal)
+                    toCurrencyButton.setTitle(toCurrency, for: .normal)
+                }
             }
             .store(in: &cancellables)
     }
@@ -207,8 +212,6 @@ private extension CurrencyConverterViewController {
     @objc
     func switchCurrencies() {
         viewModel.send(.switchCurrencies(currentAmount: amountTextField.text ?? ""))
-        fromCurrencyButton.setTitle(viewModel.fromCurrency, for: .normal)
-        toCurrencyButton.setTitle(viewModel.toCurrency, for: .normal)
     }
     
     @objc
