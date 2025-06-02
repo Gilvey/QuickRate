@@ -63,7 +63,6 @@ final class CurrencyConverterViewModel: CurrencyConverterViewModelProtocol {
         Task {
             do {
                 currencyOptions = try await currencyExchangeService.fetchCurrencies().sorted()
-                currencyOptions.append("TEST")
                 fromCurrency = currencyOptions.first ?? ""
                 toCurrency = currencyOptions.dropFirst().first ?? ""
                 state.send(CurrencyConverterState(currencies: currencyOptions, isLoading: false))
