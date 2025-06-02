@@ -180,7 +180,13 @@ private extension CurrencyConverterViewController {
             .receive(on: RunLoop.main)
             .sink { [weak self] state in
                 guard let self = self else { return }
-                self.resultTextField.text = state.convertedValue
+                
+                let inputText = self.amountTextField.text ?? ""
+                let result = state.convertedValue
+                
+                if !inputText.isEmpty || result.isEmpty {
+                    self.resultTextField.text = result
+                }
                 
                 if let message = state.errorMessage {
                     self.showAlert(message: message)
