@@ -46,12 +46,12 @@ final class APIService: APIServiceProtocol {
         }
         
         guard let httpResponse = response as? HTTPURLResponse else {
-            throw NetworkError.serverError(ServerError.default)
+            throw NetworkError.serverError(ServerErrorDTO.default)
         }
         if (200..<300).contains(httpResponse.statusCode) {
             return data
         } else {
-            throw try NetworkError.serverError(decode(data: data, as: ServerError.self))
+            throw try NetworkError.serverError(decode(data: data, as: ServerErrorDTO.self))
         }
     }
     

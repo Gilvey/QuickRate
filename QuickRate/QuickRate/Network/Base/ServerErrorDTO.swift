@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct ServerError: Error, Decodable {
+struct ServerErrorDTO: Error, Decodable {
     let error: String
     let errorDescription: String
     
@@ -17,6 +17,6 @@ struct ServerError: Error, Decodable {
     }
 }
 
-extension ServerError {
-    static let `default` = ServerError(error: "parse_error", errorDescription: "Oops, smth went wrong")
+extension ServerErrorDTO {
+    static let `default` = ServerErrorDTO(error: "parse_error", errorDescription: "Oops, smth went wrong")
 }
