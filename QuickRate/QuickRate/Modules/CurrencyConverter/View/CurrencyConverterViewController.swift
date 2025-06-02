@@ -138,16 +138,16 @@ final class CurrencyConverterViewController: UIViewController {
     
     // MARK: - Currency Menus
     
-    private func setupCurrencyMenus() {
+    private func setupCurrencyMenus(with currencyOptions: [String]) {
         fromCurrencyButton.tag = ButtonTag.from.rawValue
         toCurrencyButton.tag = ButtonTag.to.rawValue
-        configureMenu(for: fromCurrencyButton)
-        configureMenu(for: toCurrencyButton)
+        configureMenu(for: fromCurrencyButton, with: currencyOptions)
+        configureMenu(for: toCurrencyButton, with: currencyOptions)
     }
     
-    private func configureMenu(for button: UIButton) {
+    private func configureMenu(for button: UIButton, with currencyOptions: [String]) {
         button.menu = UIMenu(
-            children: viewModel.currencyOptions.map {
+            children: currencyOptions.map {
                 UIAction(title: $0) { [weak self] action in
                     guard let self else { return }
                     button.setTitle(action.title, for: .normal)
@@ -193,7 +193,7 @@ private extension CurrencyConverterViewController {
                 if let currencies = state.currencies, self.isCurrencyMenuSetup == false {
                     self.fromCurrencyButton.setTitle(currencies.first, for: .normal)
                     self.toCurrencyButton.setTitle(currencies.dropFirst().first, for: .normal)
-                    self.setupCurrencyMenus()
+                    self.setupCurrencyMenus(with: currencies)
                     self.isCurrencyMenuSetup = true
                 }
             }
