@@ -7,18 +7,18 @@
 
 import UIKit
 
-extension UIViewController {
-    func startRotating(for view: UIView) {
+extension UIView {
+    func startRotating() {
         let animation = CABasicAnimation(keyPath: "transform.rotation")
         animation.duration = 1
         animation.repeatCount = .infinity
         animation.fromValue = 0
         animation.toValue = CGFloat.pi * 2
         animation.isRemovedOnCompletion = false
-        view.layer.add(animation, forKey: "rotation")
+        layer.add(animation, forKey: "rotation")
     }
     
-    func stopRotation(for view: UIView) {
-        view.layer.removeAllAnimations()
+    func stopRotation() {
+        layer.removeAllAnimations()
     }
 }

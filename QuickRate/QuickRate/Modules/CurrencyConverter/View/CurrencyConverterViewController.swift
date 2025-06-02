@@ -38,10 +38,8 @@ final class CurrencyConverterViewController: UIViewController {
     
     private let viewModel: CurrencyConverterViewModelProtocol
     private var cancellables = Set<AnyCancellable>()
-    private var isCurrencyMenuSetup = false
     
     private var mainStackCenterYConstraint: Constraint?
-    private var isKeyBoardPresented = false
     
     init(viewModel: CurrencyConverterViewModelProtocol) {
         self.viewModel = viewModel
@@ -101,7 +99,7 @@ final class CurrencyConverterViewController: UIViewController {
     
     private func setupConstraints() {
         mainStack.snp.remakeConstraints {
-            if isIphone {
+            if traitCollection.horizontalSizeClass == .compact {
                 $0.top.equalTo(view.safeAreaLayoutGuide).offset(40)
                 $0.left.right.equalToSuperview().inset(20)
             } else {
@@ -190,11 +188,10 @@ private extension CurrencyConverterViewController {
                 
                 self.setLoading(isLoading: state.isLoading)
                 
-                if let currencies = state.currencies, self.isCurrencyMenuSetup == false {
+                if let currencies = state.currencies {
                     self.fromCurrencyButton.setTitle(currencies.first, for: .normal)
                     self.toCurrencyButton.setTitle(currencies.dropFirst().first, for: .normal)
                     self.setupCurrencyMenus(with: currencies)
-                    self.isCurrencyMenuSetup = true
                 }
                 
                 if let (fromCurrency, toCurrency) = state.switchedCurrencies {
@@ -286,9 +283,9 @@ private extension CurrencyConverterViewController {
         switchButton.setImage(image, for: .normal)
         
         if isLoading {
-            startRotating(for: switchButton.imageView ?? switchButton)
+            switchButton.imageView?.startAnimating()
         } else {
-            stopRotation(for: switchButton.imageView ?? switchButton)
+            switchButton.imageView?.stopAnimating()
         }
     }
 }
