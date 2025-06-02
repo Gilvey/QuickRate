@@ -38,10 +38,8 @@ final class CurrencyConverterViewController: UIViewController {
     
     private let viewModel: CurrencyConverterViewModelProtocol
     private var cancellables = Set<AnyCancellable>()
-    private var isCurrencyMenuSetup = false
     
     private var mainStackCenterYConstraint: Constraint?
-    private var isKeyBoardPresented = false
     
     init(viewModel: CurrencyConverterViewModelProtocol) {
         self.viewModel = viewModel
@@ -101,7 +99,7 @@ final class CurrencyConverterViewController: UIViewController {
     
     private func setupConstraints() {
         mainStack.snp.remakeConstraints {
-            if isIphone {
+            if traitCollection.horizontalSizeClass == .compact {
                 $0.top.equalTo(view.safeAreaLayoutGuide).offset(40)
                 $0.left.right.equalToSuperview().inset(20)
             } else {
@@ -182,7 +180,13 @@ private extension CurrencyConverterViewController {
             .receive(on: RunLoop.main)
             .sink { [weak self] state in
                 guard let self = self else { return }
-                self.resultTextField.text = state.convertedValue
+                
+                let inputText = self.amountTextField.text ?? ""
+                let result = state.convertedValue
+                
+                if !inputText.isEmpty || result.isEmpty {
+                    self.resultTextField.text = result
+                }
                 
                 if let message = state.errorMessage {
                     self.showAlert(message: message)
@@ -190,11 +194,15 @@ private extension CurrencyConverterViewController {
                 
                 self.setLoading(isLoading: state.isLoading)
                 
-                if let currencies = state.currencies, self.isCurrencyMenuSetup == false {
+                if let currencies = state.currencies {
                     self.fromCurrencyButton.setTitle(currencies.first, for: .normal)
                     self.toCurrencyButton.setTitle(currencies.dropFirst().first, for: .normal)
                     self.setupCurrencyMenus(with: currencies)
-                    self.isCurrencyMenuSetup = true
+                }
+                
+                if let (fromCurrency, toCurrency) = state.switchedCurrencies {
+                    fromCurrencyButton.setTitle(fromCurrency, for: .normal)
+                    toCurrencyButton.setTitle(toCurrency, for: .normal)
                 }
             }
             .store(in: &cancellables)
@@ -207,8 +215,6 @@ private extension CurrencyConverterViewController {
     @objc
     func switchCurrencies() {
         viewModel.send(.switchCurrencies(currentAmount: amountTextField.text ?? ""))
-        fromCurrencyButton.setTitle(viewModel.fromCurrency, for: .normal)
-        toCurrencyButton.setTitle(viewModel.toCurrency, for: .normal)
     }
     
     @objc
@@ -277,15 +283,15 @@ private extension CurrencyConverterViewController {
 
 private extension CurrencyConverterViewController {
     func setLoading(isLoading: Bool) {
-        view.isUserInteractionEnabled = !isLoading
+        switchButton.isUserInteractionEnabled = !isLoading
         let image = isLoading ? UIImage(.loader) : UIImage(.arrowUpArrowDown)
         
         switchButton.setImage(image, for: .normal)
         
         if isLoading {
-            startRotating(for: switchButton.imageView ?? switchButton)
+            switchButton.imageView?.startRotating()
         } else {
-            stopRotation(for: switchButton.imageView ?? switchButton)
+            switchButton.imageView?.stopRotation()
         }
     }
 }

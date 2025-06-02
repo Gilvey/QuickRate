@@ -10,8 +10,6 @@ import Combine
 
 protocol CurrencyConverterViewModelProtocol: AnyObject {
     var state: PassthroughSubject<CurrencyConverterState, Never> { get }
-    var fromCurrency: String { get }
-    var toCurrency: String { get }
     
     func send(_ event: CurrencyConverterEvent)
 }
@@ -39,13 +37,15 @@ final class CurrencyConverterViewModel: CurrencyConverterViewModelProtocol {
     
     func send(_ event: CurrencyConverterEvent) {
         switch event {
-        case .amountChanged(let string):
-            currentAmount = string
-            getExchangeRate(for: string)
-        case .switchCurrencies(let currentAmount):
+        case .amountChanged(let amount):
+            currentAmount = amount
+            getExchangeRate(for: amount)
+        case .switchCurrencies(let amount):
             swap(&fromCurrency, &toCurrency)
-            getExchangeRate(for: currentAmount)
-        case .selectCurrency(let type, let value, let currentAmount):
+            let newState = CurrencyConverterState(switchedCurrencies: (fromCurrency, toCurrency))
+            state.send(newState)
+            getExchangeRate(for: amount)
+        case let .selectCurrency(type, value, currentAmount):
             switch type {
             case .from:
                 fromCurrency = value
@@ -63,7 +63,6 @@ final class CurrencyConverterViewModel: CurrencyConverterViewModelProtocol {
         Task {
             do {
                 currencyOptions = try await currencyExchangeService.fetchCurrencies().sorted()
-                currencyOptions.append("TEST")
                 fromCurrency = currencyOptions.first ?? ""
                 toCurrency = currencyOptions.dropFirst().first ?? ""
                 state.send(CurrencyConverterState(currencies: currencyOptions, isLoading: false))
@@ -73,12 +72,15 @@ final class CurrencyConverterViewModel: CurrencyConverterViewModelProtocol {
         }
     }
     
-    private func getExchangeRate(for amount: String) {
+    private func getExchangeRate(for amount: String, showLoading: Bool = true) {
         guard !amount.isEmpty else {
             updateConvertedValue(value: "")
             return
         }
-        state.send(.init(convertedValue: "...", isLoading: true))
+        
+        if showLoading {
+            state.send(.init(convertedValue: "...", isLoading: true))
+        }
         
         let model = ExchangeRequestModel(
             amount: amount,
@@ -108,7 +110,7 @@ final class CurrencyConverterViewModel: CurrencyConverterViewModelProtocol {
     private func startTimer() {
         timer = Timer.scheduledTimer(withTimeInterval: 10, repeats: true) { [weak self] _ in
             guard let self = self, !self.currentAmount.isEmpty else { return }
-            self.getExchangeRate(for: currentAmount)
+            self.getExchangeRate(for: currentAmount, showLoading: false)
         }
     }
 }

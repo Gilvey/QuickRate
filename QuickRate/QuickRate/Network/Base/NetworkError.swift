@@ -10,7 +10,7 @@ import Foundation
 enum NetworkError: Error, LocalizedError {
     case invalidURL
     case requestFailed(underlying: Error)
-    case serverError(ServerError)
+    case serverError(ServerErrorDTO)
     case decodingFailed
     case unknown
 
